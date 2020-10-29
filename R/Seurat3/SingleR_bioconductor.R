@@ -6,7 +6,7 @@ library(magrittr)
 source("https://raw.githubusercontent.com/nyuhuyang/SeuratExtra/master/R/Seurat3_functions.R")
 
 # ====== load single cell =============
-(load(file = "data/Adipose_25_20201027.rds"))
+object = readRDS(file = "data/Adipose_25_20201027.rds")
 
 sce <- SingleCellExperiment(list(logcounts=object[["RNA"]]@data),
                                 colData=DataFrame(object@meta.data))

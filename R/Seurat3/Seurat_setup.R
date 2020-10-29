@@ -49,7 +49,8 @@ GSE129363 <- CreateSeuratObject(counts = GSE129363_counts,
                                 meta.data = GSE129363_meta.data,
                                 min.cells = 0,
                                 min.features = 0)
-GSE129363[["RNA"]]@data = data
+#GSE129363[["RNA"]]@data = data
+GSE129363 %<>% NormalizeData
 GSE129363$orig.ident = GSE129363$SampleName
 Idents(GSE129363) ="orig.ident"
 #======== GSE136229 =======
@@ -135,9 +136,14 @@ TSNEPlot.1(object, group.by="orig.ident",pt.size = 0.5,label = T,
            label.repel = T,alpha = 0.9, cols = Singler.colors,
            no.legend = T,label.size = 4, repel = T, title = "No Integration with 25 samples with 23 PCA",
            do.print = T, do.return = F)
-TSNEPlot.1(object, pt.size = 1,label = T,
+TSNEPlot.1(object, pt.size = 1,label = T,group.by="RNA_snn_res.0.6",
            label.repel = F,alpha = 1, 
-           no.legend = T,label.size = 8, repel = T, 
+           no.legend = T,label.size = 8, repel = T, width=7, height=7,
+           do.print = T, do.return = F)
+object$Tissue %<>% factor(levels = c("VAT","SAT"))
+TSNEPlot.1(object, pt.size = 1,label = F,group.by="Tissue",
+           label.repel = F,alpha = 1, 
+           no.legend = T,label.size = 8, repel = T, width=7, height=7,
            do.print = T, do.return = F)
 saveRDS(object, file = "data/Adipose_25_20201027.rds")
 
@@ -172,7 +178,40 @@ features <- FilterGenes(object,c("CD3D","CD4","CD8A",
 features <- FilterGenes(object,c("CD34","CFD","KRT18",
                                  "PECAM1","VWF","CLDN5",
                                  "PTPRC","SRGN","LAPTM5"))
+features <- FilterGenes(object,c("PDGFA","VEGFA"))
+
 FeaturePlot.1(object,features = features, pt.size = 0.005, cols = c("gray", "red"),
-              alpha = 1,reduction = "tsne",
+              alpha = 1,reduction = "tsne",label = T,
               threshold = 1, text.size = 20, border = T,do.print = T, do.return = F,ncol = 3,
-              units = "in",width=9, height=9, no.legend = T, save.path = save.path)
+              units = "in",width=6, height=3, no.legend = T, save.path = path)
+object$label = plyr::mapvalues(object$RNA_snn_res.0.6,
+                               from = 0:16,
+                               to =c("Macrophages",
+                                     "P2",
+                                     "P3",
+                                     "P1",
+                                     "T cells CD4",
+                                     "P4",
+                                     "P5",
+                                     "E1",
+                                     "P6",
+                                     "P1",
+                                     "T cells CD8A",
+                                     "Monocytes",
+                                     "Monocytes",
+                                     "T cells CD4",
+                                     "B cells",
+                                     "E2",
+                                     "T cells CD4")) %>% as.character()
+object@meta.data %<>% cbind(object@reductions$tsne@cell.embeddings)
+#object@meta.data[object$label %in% "T cells CD4" & object$tSNE_1<0, "label"] = "P7"
+TSNEPlot.1(object, pt.size = 1,label = T,group.by="label",
+           label.repel = F,alpha = 1, 
+           no.legend = T,label.size = 7, repel = T, width=7, height=7,
+           do.print = T, do.return = F)
+Idents(object) = "label"
+
+FeaturePlot.1(object,features = features, pt.size = 0.005, cols = c("gray", "red"),
+              alpha = 1,reduction = "tsne",label = T,
+              threshold = 1, text.size = 20, border = T,do.print = T, do.return = F,ncol = 3,
+              units = "in",width=9, height=9, no.legend = T, save.path = path)
